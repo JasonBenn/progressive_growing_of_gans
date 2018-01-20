@@ -1,0 +1,10 @@
+theano
+lasagne
+Pillow==3.1.1  # libjpeg8d
+numpy==1.13.1
+scipy==0.19.1
+h5py==2.7.0
+moviepy==0.2.3.2
+cryptography==2.0.3
+opencv-python  # ==2.4.11
+lmdb==0.92
