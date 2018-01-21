@@ -1,5 +1,5 @@
-theano
-lasagne
+theano==0.10.0beta4
+git+git://github.com/Lasagne/Lasagne.git@0754420d08cc3d375674983166327c060eb4fbcb
 Pillow==3.1.1  # libjpeg8d
 numpy==1.13.1
 scipy==0.19.1

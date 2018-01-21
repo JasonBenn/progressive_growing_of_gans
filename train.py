@@ -423,11 +423,13 @@ def interpolate_latents(
     snapshot,
     video_fps       = 30,
     filter_frames   = 30,
-    num_frames      = 60*30,
+    num_frames      = 5*30,
     drange_net      = [-1,1],
     image_grid_size = None,
     zoom            = None,
-    video_bitrate   = '16M'):
+    video_bitrate   = '16M',
+    latents         = None,
+    gaussian_blur   = None):
 
     import moviepy.editor # pip install moviepy
 
@@ -438,12 +440,17 @@ def interpolate_latents(
     if zoom is None: zoom = max(min(1920 / w, 1080 / h), 1)
     if image_grid_size is None: image_grid_size = np.clip(int(np.floor(1920 / (w * zoom))), 1, 16), np.clip(int(np.floor(1080 / (h * zoom))), 1, 16)
 
-    # Generate latent vectors (frame, image, channel, component).
-    print 'Generating latent vectors...'
-    latents = np.random.randn(num_frames, np.prod(image_grid_size), *net.G.input_shape[1:]).astype(np.float32)
-    latents = scipy.ndimage.gaussian_filter(latents, [filter_frames] + [0] * len(net.G.input_shape), mode='wrap')
-    latents /= np.sqrt(np.mean(latents ** 2))
+    if latents is None:
+        # Generate latent vectors (frame, image, channel, component).
+        print 'Generating latent vectors...'
+        latents = np.random.randn(num_frames, np.prod(image_grid_size), *net.G.input_shape[1:]).astype(np.float32)
 
+    if gaussian_blur:
+        # Gaussian smoothing. We may want to keep this in.
+        latents = scipy.ndimage.gaussian_filter(latents, [filter_frames] + [0] * len(net.G.input_shape), mode='wrap')
+
+    latents /= np.sqrt(np.mean(latents ** 2))
+    
     # Create video.
     print 'Generating video...'
     result_subdir = misc.create_result_subdir(config.result_dir, config.run_desc)
@@ -456,12 +463,14 @@ def interpolate_latents(
         if grid.shape[2] == 1: grid = grid.repeat(3, 2) # grayscale => RGB
         return grid
     video = moviepy.editor.VideoClip(make_frame, duration=float(num_frames)/video_fps)
-    video.write_videofile(os.path.join(result_subdir, os.path.basename(result_subdir) + '.mp4'), fps=video_fps, codec='libx264', bitrate=video_bitrate)
+    video_filepath = os.path.join(result_subdir, os.path.basename(result_subdir) + '.mp4')
+    video.write_videofile(video_filepath, fps=video_fps, codec='libx264', bitrate=video_bitrate)
 
     # Done.
     print 'Done.'
     with open(os.path.join(result_subdir, '_video-done.txt'), 'wt'):
         pass
+    return video_filepath
 
 #----------------------------------------------------------------------------
 
